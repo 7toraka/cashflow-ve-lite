@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashFlow VE Lite - Gestión de Flujo de Caja</title>
+    
+    <!-- 
+    ========================================
+    ESTILOS CSS - MOBILE FIRST
+    ========================================
+    -->
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1c1e21;
+            --text-muted: #65676b;
+            --accent-blue: #1877f2;
+            --accent-green: #42b72a;
+            --accent-red: #fa3e3e;
+            --accent-orange: #f7b928;
+            --border-radius: 8px;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        header {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { margin: 0; font-size: 1.3em; color: var(--accent-blue); }
+        .subtitle { font-size: 0.8em; color: var(--text-muted); display: none; }
+
+        .help-btn {
+            background: var(--accent-blue);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        /* Main Container - Mobile First */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            color: var(--text-main);
+        }
+
+        /* Inputs */
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+
+        input:focus {
+            border-color: var(--accent-blue);
+            outline: none;
+        }
+
+        input.error {
+            border-color: var(--accent-red);
+            background-color: #ffe6e6;
+        }
+
+        .budget-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: end;
+            background: #f7f8fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .budget-row input { margin-bottom: 0; }
+        .budget-row .col-name input { font-size: 0.85em; }
+        .budget-row .col-amount input { font-size: 0.85em; }
+        .budget-row .col-cashea input { font-size: 0.85em; }
+        
+        .budget-row .col-delete button {
+            background: #ffebee;
+            color: var(--accent-red);
+            border: 1px solid #ffcdd2;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        button.primary {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            width: 100%;
+        }
+        button.primary:hover { background-color: #166fe5; }
+
+        button.add-row {
+            background-color: #e4e6eb;
+            color: var(--text-main);
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        button.download {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button.download:hover { background-color: #369926; }
+
+        /* Alert Messages */
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .alert-error {
+            background-color: #ffe6e6;
+            color: #cc0000;
+            border: 1px solid #ffcdd2;
+        }
+        .alert-success {
+            background-color: #e6ffe6;
+            color: #006600;
+            border: 1px solid #ccffcc;
+        }
+
+        /* Data Grid - 2 columnas */
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .data-item {
+            background: #f7f8fa;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .data-value {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--accent-blue);
+        }
+        .data-label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .data-item input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0 0 0;
+            font-size: 0.85em;
+            text-align: center;
+        }
+
+        /* Señalización Crediticia - Simplificada */
+        .signaling-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f7f8fa;
+            border-radius: 8px;
+        }
+        .signaling-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+        }
+        .signaling-text {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        /* Results */
+        .result-box {
+            background: #e7f3ff;
+            border-left: 4px solid var(--accent-blue);
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .result-box h3 { margin: 0 0 12px 0; font-size: 1em; }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        .result-row.total {
+            border-top: 1px solid #cce5ff;
+            padding-top: 8px;
+            margin-top: 8px;
+            font-weight: bold;
+            font-size: 1em;
+        }
+        .result-subrow {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        /* Risk Meter */
+        .risk-section h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        .risk-meter {
+            height: 20px;
+            background: #e4e6eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .risk-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s, background-color 0.5s;
+        }
+        .risk-text {
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .risk-alert {
+            margin-top: 10px;
+            padding: 10px;
+            background: #ffe6e6;
+            color: #cc0000;
+            border-radius: 4px;
+            font-size: 0.85em;
+            display: none;
+        }
+
+        /* Responsive Desktop */
+        @media (min-width: 768px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .card.full-width {
+                grid-column: 1 / -1;
+            }
+            .subtitle { display: block; }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Header -->
+<header>
+    <div>
+        <h1>CashFlow VE Lite</h1>
+        <div class="subtitle">Gestión de Flujo de Caja</div>
+    </div>
+    <button class="help-btn" onclick="openModal()">?</button>
+</header>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <h2>¿Cómo usar CashFlow VE Lite?</h2>
+        
+        <h3>📋 Paso a Paso</h3>
+        <ol style="font-size: 0.9em; padding-left: 20px; line-height: 1.8;">
+            <li>Ingresa tu <strong>ingreso total mensual</strong> en USD.</li>
+            <li>Completa tus categorías de gasto:
+                <ul style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                    <li><strong>Monto Total:</strong> Cuánto gastarás en esa categoría.</li>
+                    <li><strong>Monto Cashea:</strong> Cuánto pagarás con Cashea.</li>
+                </ul>
+            </li>
+            <li>Revisa las tasas BCV y P2P (puedes editarlas si tienes información actualizada).</li>
+            <li>Haz click en <strong>"Calcular Estrategia"</strong>.</li>
+            <li>El resultado te dirá cuánto mantener en efectivo, cuánto en Bolívares para Cashea, y cuánto convertir a USD/USDT para protegerte de la inflación.</li>
+        </ol>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <h3>💡 ¿Por qué esta estrategia?</h3>
+        <p style="font-size: 0.9em; color: #555; line-height: 1.6;">
+            En Venezuela, la inflación (~8.4% mensual) es mayor que la tasa de interés bancaria (~3.5% mensual). 
+            Esto significa que cada dólar en Bolívares pierde ~4.9% de valor real cada mes.
+            <br><br>
+            <strong>Cashea</strong> te permite diferir pagos, pero necesitas mantener Bolívares en el banco para las cuotas. 
+            Esta herramienta calcula el <strong>mínimo necesario</strong> para mantener en VES, y te dice cuánto convertir a USD/USDT para proteger tu patrimonio.
+            <br><br>
+            <strong>Objetivo:</strong> Usar Cashea inteligentemente sin perder dinero por inflación.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    
+    <!-- CARD 1: INGRESOS Y PRESUPUESTO -->
+    <div class="card full-width">
+        <h2>💰 Ingresos y Presupuesto</h2>
+        
+        <div id="alert-box" class="alert"></div>
+        
+        <label>Ingreso Total Mensual (USD):</label>
+        <input type="number" id="total-income" placeholder="Ej. 400" oninput="clearErrors()">
+
+        <label style="margin-top: 20px; display: block;">
+            Categorías de Gasto
+        </label>
+        
+        <div id="budget-list"></div>
+        
+        <button class="add-row" onclick="addBudgetRow()">+ Agregar Categoría</button>
+        <button class="primary" onclick="validateAndCalculate()">Calcular Estrategia</button>
+    </div>
+
+    <!-- CARD 2: DATOS ECONÓMICOS -->
+    <div class="card">
+        <h2>📈 Tasas de Cambio</h2>
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-label">Tasa BCV</div>
+                <input type="number" id="input-bcv" value="866.56" step="0.01">
+            </div>
+            <div class="data-item">
+                <div class="data-label">Tasa P2P</div>
+                <input type="number" id="input-p2p" value="965.00" step="0.01">
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 3: SEÑALIZACIÓN CREDITICIA (Simplificada) -->
+    <div class="card">
+        <h2>🏦 Banco</h2>
+        <div class="signaling-box">
+            <div class="signaling-icon" id="signaling-icon" style="background-color: #42b72a;">✓</div>
+            <div class="signaling-text" id="signaling-status">Óptimo</div>
+        </div>
+    </div>
+
+    <!-- CARD 4: RESULTADO SUGERIDO -->
+    <div class="card full-width">
+        <h2>📋 Resultado</h2>
+        
+        <div class="result-box">
+            <h3>Asignación de Fondos</h3>
+            <div class="result-row">
+                <span>Para Gastos (Efectivo):</span>
+                <span id="res-cash">0.00 USD</span>
+            </div>
+            <div class="result-row">
+                <span>Buffer Cashea (VES):</span>
+                <span id="res-cashea-ves">0.00 USD</span>
+            </div>
+            <div class="result-row total">
+                <span>🛡️ A Convertir (USD/USDT):</span>
+                <span id="res-hedge">0.00 USD</span>
+            </div>
+            <div class="result-subrow">
+                <span id="res-hedge-usdt">~0.00 USDT</span>
+            </div>
+        </div>
+
+        <button class="download" onclick="downloadCSV()">📥 Descargar Resultados</button>
+    </div>
+
+    <!-- CARD 5: MONITOR DE RIESGO -->
+    <div class="card full-width risk-section">
+        <h2>⚠️ Riesgo por Inflación</h2>
+        <div class="risk-meter">
+            <div class="risk-fill" id="risk-bar"></div>
+        </div>
+        <div class="risk-text" id="risk-text">Esperando cálculo...</div>
+        <div id="risk-alert" class="risk-alert">
+            <strong>Alerta:</strong> Tienes mucho dinero en Bolívares para cubrir cuotas Cashea. La inflación reduce el valor de ese dinero cada día.
+            <br><br>
+            <strong>Recomendación:</strong> Considera reducir el monto de compras por Cashea en categorías no esenciales.
+        </div>
+    </div>
+
+</div>
+
+<!-- 
+========================================
+LÓGICA JAVASCRIPT
+========================================
+-->
+<script>
+    const DEFAULT_BCV = 866.56;
+    const DEFAULT_P2P = 965.00;
+
+    let budgetCategories = [
+        { name: "Alimentos", amount: 0, casheaAmount: 0 },
+        { name: "Servicios", amount: 0, casheaAmount: 0 },
+        { name: "Salud", amount: 0, casheaAmount: 0 },
+        { name: "Otros", amount: 0, casheaAmount: 0 }
+    ];
+
+    let lastResults = {
+        cash: 0, buffer: 0, hedge: 0, hedgeUSDT: 0,
+        signaling: '', risk: '', exposure: 0,
+        bcv: DEFAULT_BCV, p2p: DEFAULT_P2P
+    };
+
+    function init() {
+        renderBudgetRows();
+    }
+
+    function renderBudgetRows() {
+        const container = document.getElementById('budget-list');
+        container.innerHTML = '';
+
+        budgetCategories.forEach((cat, index) => {
+            const row = document.createElement('div');
+            row.className = 'budget-row';
+            row.innerHTML = `
+                <div class="col-name">
+                    <input type="text" value="${cat.name}" onchange="updateCategory(${index}, 'name', this.value)" placeholder="Categoría">
+                </div>
+                <div class="col-amount">
+                    <input type="number" value="${cat.amount}" onchange="updateCategory(${index}, 'amount', this.value)" placeholder="Total $" step="0.01">
+                </div>
+                <div class="col-cashea">
+                    <input type="number" value="${cat.casheaAmount}" onchange="updateCategory(${index}, 'casheaAmount', this.value)" placeholder="Cashea $" step="0.01">
+                </div>
+                <div class="col-delete">
+                    <button onclick="removeRow(${index})" title="Eliminar">🗑️</button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function addBudgetRow() {
+        budgetCategories.push({ name: "", amount: 0, casheaAmount: 0 });
+        renderBudgetRows();
+        clearErrors();
+    }
+
+    function removeRow(index) {
+        budgetCategories.splice(index, 1);
+        renderBudgetRows();
+        clearErrors();
+    }
+
+    function updateCategory(index, field, value) {
+        if (field === 'amount' || field === 'casheaAmount') {
+            value = parseFloat(value) || 0;
+        }
+        budgetCategories[index][field] = value;
+        clearErrors();
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('input').forEach(input => input.classList.remove('error'));
+        document.getElementById('alert-box').style.display = 'none';
+    }
+
+    function showAlert(message, type = 'error') {
+        const alertBox = document.getElementById('alert-box');
+        alertBox.className = 'alert ' + (type === 'error' ? 'alert-error' : 'alert-success');
+        alertBox.innerHTML = message;
+        alertBox.style.display = 'block';
+    }
+
+    function validateAndCalculate() {
+        clearErrors();
+        let hasError = false;
+        let errors = [];
+
+        let incomeInput = document.getElementById('total-income');
+        let incomeUSD = parseFloat(incomeInput.value) || 0;
+
+        if (incomeUSD <= 0) {
+            incomeInput.classList.add('error');
+            errors.push("❌ Debes ingresar un ingreso total mayor a $0");
+            hasError = true;
+        }
+
+        let validCategories = budgetCategories.filter(cat => cat.amount > 0);
+        
+        if (validCategories.length === 0) {
+            errors.push("❌ Debes agregar al menos 1 categoría de gasto con monto total mayor a $0");
+            hasError = true;
+        }
+
+        budgetCategories.forEach((cat, index) => {
+            if (cat.amount > 0) {
+                if (cat.casheaAmount > cat.amount) {
+                    errors.push(`❌ En "${cat.name}": El monto Cashea no puede ser mayor al monto total`);
+                    hasError = true;
+                }
+            }
+        });
+
+        if (hasError) {
+            showAlert(errors.join('<br>'), 'error');
+        } else {
+            showAlert('✅ Calculando...', 'success');
+            setTimeout(() => {
+                calculateAll();
+                document.getElementById('alert-box').style.display = 'none';
+            }, 500);
+        }
+    }
+
+    function calculateAll() {
+        let bcv = parseFloat(document.getElementById('input-bcv').value) || DEFAULT_BCV;
+        let p2p = parseFloat(document.getElementById('input-p2p').value) || DEFAULT_P2P;
+        let incomeUSD = parseFloat(document.getElementById('total-income').value) || 0;
+
+        let totalCasheaUSD = 0;
+        let totalCashUSD = 0;
+
+        budgetCategories.forEach(cat => {
+            totalCasheaUSD += cat.casheaAmount;
+            totalCashUSD += (cat.amount - cat.casheaAmount);
+        });
+
+        let targetBufferUSD = totalCasheaUSD * 1.10;
+        let remainingForHedge = incomeUSD - (totalCashUSD + targetBufferUSD);
+        if (remainingForHedge < 0) remainingForHedge = 0;
+
+        let hedgeInBolivars = remainingForHedge * bcv;
+        let hedgeInUSDT = hedgeInBolivars / p2p;
+
+        document.getElementById('res-cash').innerText = totalCashUSD.toFixed(2) + ' USD';
+        document.getElementById('res-cashea-ves').innerText = targetBufferUSD.toFixed(2) + ' USD';
+        document.getElementById('res-hedge').innerText = remainingForHedge.toFixed(2) + ' USD';
+        document.getElementById('res-hedge-usdt').innerText = '~' + hedgeInUSDT.toFixed(2) + ' USDT';
+
+        updateRiskAndSignaling(incomeUSD, targetBufferUSD);
+
+        let vesExposurePct = incomeUSD > 0 ? (targetBufferUSD / incomeUSD) * 100 : 0;
+        lastResults = {
+            cash: totalCashUSD,
+            buffer: targetBufferUSD,
+            hedge: remainingForHedge,
+            hedgeUSDT: hedgeInUSDT,
+            signaling: document.getElementById('signaling-status').innerText,
+            risk: document.getElementById('risk-text').innerText,
+            exposure: vesExposurePct,
+            bcv: bcv,
+            p2p: p2p
+        };
+    }
+
+    function updateRiskAndSignaling(income, buffer) {
+        // Señalización Crediticia (Simplificada)
+        let signalingIcon = document.getElementById('signaling-icon');
+        let signalingStatus = document.getElementById('signaling-status');
+        
+        if (buffer > 50) {
+            signalingIcon.innerText = '✓';
+            signalingIcon.style.backgroundColor = '#42b72a';
+            signalingStatus.innerText = 'Óptimo';
+            signalingStatus.style.color = '#42b72a';
+        } else if (buffer > 20) {
+            signalingIcon.innerText = '~';
+            signalingIcon.style.backgroundColor = '#f7b928';
+            signalingStatus.innerText = 'Aceptable';
+            signalingStatus.style.color = '#f7b928';
+        } else {
+            signalingIcon.innerText = '!';
+            signalingIcon.style.backgroundColor = '#fa3e3e';
+            signalingStatus.innerText = 'Bajo';
+            signalingStatus.style.color = '#fa3e3e';
+        }
+
+        // Monitor de Riesgo
+        let vesExposurePct = income > 0 ? (buffer / income) * 100 : 0;
+        let riskBar = document.getElementById('risk-bar');
+        let riskText = document.getElementById('risk-text');
+        let riskAlert = document.getElementById('risk-alert');
+
+        riskAlert.style.display = 'none';
+        
+        if (vesExposurePct > 40) {
+            riskBar.style.width = '100%';
+            riskBar.style.backgroundColor = '#fa3e3e';
+            riskText.innerText = 'Riesgo Alto';
+            riskText.style.color = '#fa3e3e';
+            riskAlert.style.display = 'block';
+        } else if (vesExposurePct > 15) {
+            riskBar.style.width = '60%';
+            riskBar.style.backgroundColor = '#f7b928';
+            riskText.innerText = 'Riesgo Moderado';
+            riskText.style.color = '#f7b928';
+        } else {
+            let width = Math.max(10, vesExposurePct * 2);
+            riskBar.style.width = width + '%';
+            riskBar.style.backgroundColor = '#42b72a';
+            riskText.innerText = 'Riesgo Bajo';
+            riskText.style.color = '#42b72a';
+        }
+    }
+
+    function downloadCSV() {
+        if (lastResults.cash === 0 && lastResults.buffer === 0 && lastResults.hedge === 0) {
+            showAlert('⚠️ Primero calcula la estrategia.', 'error');
+            return;
+        }
+
+        let now = new Date();
+        let dateStr = now.toISOString().slice(0,10);
+
+        let csvContent = "CASHFLOW VE LITE\n================\n\n";
+        csvContent += `Fecha,${dateStr}\n\n`;
+        csvContent += "DATOS ECONÓMICOS\n";
+        csvContent += `Tasa BCV,${lastResults.bcv} Bs/USD\n`;
+        csvContent += `Tasa P2P,${lastResults.p2p} Bs/USDT\n\n`;
+        
+        csvContent += "PRESUPUESTO\n";
+        csvContent += "Categoría,Monto Total (USD),Monto Cashea (USD)\n";
+        budgetCategories.forEach(cat => {
+            if (cat.amount > 0) {
+                csvContent += `${cat.name},${cat.amount.toFixed(2)},${cat.casheaAmount.toFixed(2)}\n`;
+            }
+        });
+        csvContent += "\n";
+        
+        csvContent += "RESULTADO\n";
+        csvContent += `Para Gastos (Efectivo),${lastResults.cash.toFixed(2)} USD\n`;
+        csvContent += `Buffer Cashea (VES),${lastResults.buffer.toFixed(2)} USD\n`;
+        csvContent += `A Convertir (USD/USDT),${lastResults.hedge.toFixed(2)} USD\n`;
+        csvContent += `Equivalente en USDT,${lastResults.hedgeUSDT.toFixed(2)} USDT\n\n`;
+        
+        csvContent += "INDICADORES\n";
+        csvContent += `Señalización Crediticia,${lastResults.signaling}\n`;
+        csvContent += `Nivel de Riesgo,${lastResults.risk}\n`;
+        csvContent += `Exposición a Bolívares,${lastResults.exposure.toFixed(1)}%\n`;
+
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `cashflow_ve_lite_${dateStr}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showAlert('✅ Resultados descargados.', 'success');
+        setTimeout(() => {
+            document.getElementById('alert-box').style.display = 'none';
+        }, 3000);
+    }
+
+    function openModal() {
+        document.getElementById('helpModal').style.display = "block";
+    }
+    function closeModal() {
+        document.getElementById('helpModal').style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('helpModal')) {
+            document.getElementById('helpModal').style.display = "none";
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
